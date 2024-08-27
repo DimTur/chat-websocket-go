@@ -18,7 +18,7 @@ func Init(chatdb chatdb.DB) {
 func NewMessage(msgReq domain.MessageChatRequest, fromID domain.ID) error {
 	msg := domain.Message{
 		MsgID:  domain.ID(uuid.New().String()),
-		Body:   msgReq.Msg,
+		Body:   msgReq.Msg.Body,
 		TDate:  time.Now(),
 		FromID: fromID,
 	}

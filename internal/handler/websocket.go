@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -28,6 +27,12 @@ func HandleWsConn(conn *websocket.Conn, userID domain.ID) {
 
 	ch := pools.Users.New(userID)
 
+	initialMessage := map[string]string{"userID": string(userID)}
+	if err := conn.WriteJSON(initialMessage); err != nil {
+		log.Printf("Error sending initial userID to client: %v", err)
+		return
+	}
+
 	// write to conn from channel
 	go func() {
 		tiker := time.NewTicker(pingPeriod)
@@ -42,6 +47,7 @@ func HandleWsConn(conn *websocket.Conn, userID domain.ID) {
 			case msg, ok := <-ch:
 				if !ok {
 					log.Println("channel for " + userID + " closed")
+					return
 				}
 				log.Println("SEND to ", userID, msg)
 
@@ -109,14 +115,16 @@ func HandleWsConn(conn *websocket.Conn, userID domain.ID) {
 			}
 
 		case websocket.CloseMessage:
+			log.Println("Received close message from", userID)
+			conn.WriteMessage(websocket.CloseMessage, []byte{})
 			return
 		}
 	}
 }
 
-func messageHandler(message []byte) {
-	fmt.Println(string(message))
-}
+// func messageHandler(message []byte) {
+// 	fmt.Println(string(message))
+// }
 
 func handleWsError(err error, userID domain.ID) {
 	switch {
